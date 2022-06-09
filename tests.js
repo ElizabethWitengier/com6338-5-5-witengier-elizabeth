@@ -73,7 +73,7 @@ body.appendChild(testBtn)
 const scriptPaths = [
   "https://cdnjs.cloudflare.com/ajax/libs/mocha/8.3.2/mocha.min.js",
   "https://cdnjs.cloudflare.com/ajax/libs/chai/4.3.4/chai.min.js",
-  "https://cdnjs.cloudflare.com/ajax/libs/sinon.js/10.0.1/sinon.min.js",
+  // "https://cdnjs.cloudflare.com/ajax/libs/sinon.js/10.0.1/sinon.min.js",
   // "jsdom.js" // npx browserify _jsdom.js --standalone JSDOM -o jsdom.js
 ]
 const scriptTags = scriptPaths.map(path => {
@@ -117,82 +117,129 @@ function __handleClick() {
 function runTests() {
   testBtn.textContent = 'Running Tests'
   testBtn.disabled = true
+
   mochaDiv.style.display = 'block'
   body.style.overflow = 'hidden'
 
   mocha.setup("bdd");
   const expect = chai.expect;
 
-  describe("CSS Form Practice", function () {
-    const numInput = document.querySelector('form input[type=number]')
-    const textInput = document.querySelector('form input[type=text]')
-    const getH1Styles = () => getComputedStyle(document.querySelector('h1'))
-    const formButton = document.querySelector('form button:not([type=button])')
-    const submitForm = () => formButton.click()
-    before(() => {
-      document
-        .querySelector('form')
-        .addEventListener('submit', e => e.preventDefault())
+  String.prototype.includesLetters = function (letters) {
+    return letters.split("").every((letter) => this.includes(letter))
+  }
+
+  describe("Todo App", function () {
+    const button = document.querySelector('form button')
+    const input = document.querySelector('form input')
+    const list = document.getElementById('todo-list')
+
+    afterEach(() => {
+      list.innerHTML = ""
+      input.value = ""
     })
-    afterEach(sinon.restore)
     after(() => {
       testBtn.disabled = false
       testBtn.textContent = 'Close Tests'
     })
-    describe('form setup', () => {
-      it('should have number input and text input', () => {
-        expect(numInput).to.exist
-        expect(textInput).to.exist
-      })
-      it('should have name attributes for number input and text input', () => {
-        expect(numInput.name).to.exist
-        expect(textInput.name).to.exist
-      })
-      it('should have placeholder attribute for number input and text input', () => {
-        expect(textInput.placeholder).to.exist
-        expect(numInput.placeholder).to.exist
-      })
-      it('should have step="8" attribute for number input', () => {
-        expect(numInput.step).to.eq('8')
-      })
-      it('should have min="0" attribute for number input', () => {
-        expect(numInput.min).to.eq('0')
-      })
-      it('should have label element that match the number input and text input', () => {
-        const labels = document.querySelectorAll('form label')
-        expect(labels.length).to.eq(2)
-        const matchingLabels = Array.from(labels).filter(label => {
-          const forAttr = label.getAttribute('for')
-          return  forAttr=== numInput.id || forAttr === textInput.id
-        })
-        expect(matchingLabels.length).to.eq(2)
+    it('should not add a todo when clicking button without typing value', () => {
+      input.value = ""
+      button.click()
+      expect(list.innerHTML).to.eq("")
+    })
+    it('should not add a todo when clicking button if input is filled with only spaces', () => {
+      input.value = "    "
+      button.click()
+      expect(list.innerHTML).to.eq("")
+    })
+    it('should generate list item element when adding todo', () => {
+      input.value = "banana"
+      button.click()
+      expect(list.querySelector('li')).to.exist
+    })
+    it('should generate button element within list item element when adding todo', () => {
+      input.value = "banana"
+      button.click()
+      expect(list.querySelector('li > button')).to.exist
+    })
+    it('should generate button element containing text of todo when adding todo', () => {
+      input.value = "banana"
+      button.click()
+      expect(list.querySelector('li > button').textContent).to.eq('banana')
+    })
+    it('should set value of input element to empty string after adding todo', () => {
+      input.value = "banana"
+      button.click()
+      expect(input.value).to.eq("")
+    })
+    it('should mark todo as done by striking through text when todo is clicked ONCE', () => {
+      input.value = "banana"
+      button.click()
+      const todo = list.querySelector('li button')
+      expect(todo).to.exist
+      expect(todo.textContent).to.eq('banana')
+      expect(getComputedStyle(todo).textDecoration).to.not.include('line-through')
+      todo.click()
+      expect(getComputedStyle(todo).textDecoration).to.include('line-through')
+    })
+    it('should remove todo from list when clicking todo TWICE', () => {
+      input.value = "banana"
+      button.click()
+      const todo = list.querySelector('li button')
+      expect(todo).to.exist
+      expect(todo.textContent).to.eq('banana')
+      expect(getComputedStyle(todo).textDecoration).to.not.include('line-through')
+      todo.click()
+      todo.click()
+      expect(list.querySelector('li button')).to.not.exist
+    })
+    it('should add multiple todos', () => {
+      const todos = [
+        'banana',
+        'grape',
+        'mango',
+        'apple'
+      ]
+
+      todos.forEach((todo, index) => {
+        input.value = todo
+        button.click()
+        const todos = Array.from(todoList.querySelectorAll('li button'))
+        expect(todos.length === index + 1).to.be.true
+        const lastTodo = todos.find(todoEl => todoEl.textContent === todo)
+        expect(lastTodo).to.exist
+        expect(lastTodo.textContent).to.eq(todo)
       })
     })
-    describe("form submit", () => {
-      let submitStub
-      beforeEach(() => {
-        submitStub = sinon.stub()
-        document
-          .querySelector('form')
-          .addEventListener('submit', submitStub)
+    it('should be able to remove todos from middle of the list', () => {
+      let todos = [
+        'banana',
+        'grape',
+        'mango',
+        'apple'
+      ]
+      let todoElements
+      todos.forEach(todo => {
+        input.value = todo
+        button.click()
+        todoElements = Array.from(todoList.querySelectorAll('li button'))
+        const lastTodo = todoElements.find(todoEl => todoEl.textContent === todo)
+        expect(lastTodo).to.exist
+        expect(lastTodo.textContent).to.eq(todo)
       })
-      it('form should fire submit event when submit button is clicked', () => {
-        submitForm()
-        expect(submitStub.called).to.be.true
-      })
-      it('should set the font color', () => {
-        const color = 'red'
-        textInput.value = color
-        submitForm()
-        expect(submitStub.called).to.be.true
-        expect(getH1Styles().color).to.eq('rgb(255, 0, 0)')
-      })
-      it('should set the font size', () => {
-        const size = '80'
-        numInput.value = size
-        submitForm()
-        expect(submitStub.called).to.be.true
-        expect(getH1Styles().fontSize).to.eq(size + 'px')
+
+      expect(todoElements.length).to.eq(todos.length)
+      todos = todos.filter(todo => todo !== 'mango')
+      mangoEl = todoElements.find(todo => todo.textContent === 'mango')
+      mangoEl.click()
+      expect(getComputedStyle(mangoEl).textDecoration.includes('line-through')).to.be.true
+      mangoEl.click()
+      todoElements = Array.from(todoList.querySelectorAll('li button'))
+      mangoEl = todoElements.find(todo => todo.textContent === 'mango')
+      expect(mangoEl).to.not.exist
+
+      todos.forEach(todo => {
+        const todoEl = todoElements.find(todoEl => todoEl.textContent === todo)
+        expect(todoEl).to.exist
       })
     })
   });
