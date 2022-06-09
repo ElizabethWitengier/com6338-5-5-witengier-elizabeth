@@ -132,6 +132,9 @@ function runTests() {
     const button = document.querySelector('form button')
     const input = document.querySelector('form input')
     const list = document.getElementById('todo-list')
+    document.querySelector('form').addEventListener('submit', function(e) {
+      e.preventDefault()
+    })
 
     afterEach(() => {
       list.innerHTML = ""
