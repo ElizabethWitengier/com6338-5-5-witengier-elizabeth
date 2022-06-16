@@ -5,12 +5,13 @@ var button = document.querySelector('button')
 
 form.onsubmit = function(e) {
   e.preventDefault()
-  var input = document.querySelector('input').value
+  var input = document.querySelector('input')
   var list = document.createElement('li')
   list.innerHTML = input.value
-  ul.appendChild(list);
+  ul.appendChild(list)
   input.value = ""
   console.log(list)
+  
   list.addEventListener('click', function() {
     list.style.textDecoration = "line-through"
   })
